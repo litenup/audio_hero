@@ -31,6 +31,8 @@ Or install it yourself as:
 Return the converted audio as ruby temp file object
 
 ```ruby
+require "open-uri"
+
 file = open("url/or/path/to/audio/file")
 
 new_file = AudioHero::Sox.new(file).convert({output_options: "-c 1", output_format: "mp3", channel: "left"})
@@ -73,12 +75,23 @@ Options(hash):
   * file2 (path to second audio file, I use this to split both channels of an audio file at one go, require a modified sox that will not overwrite file1's output. Eg. my modified sox output [milliseconds].wav instead of 001.wav)
   * gc (no default, set to "true" to auto close! input file)
 
+###Stats
+Get statistics report on audio file (support up to 2 channels).
+
+```ruby
+stats = AudioHero::Sox.new(file).stats({input_format: "wav"})
+# {"dc_offset"=>"0.000398", "min_level"=>"-0.299591", "max_level"=>"0.303711", "pk_lev_db"=>"-10.35", "rms_lev_db"=>"-23.08", "rms_pk_db"=>"-16.19", "rms_tr_db"=>"-96.84", "crest_factor"=>"4.33", "flat_factor"=>"0.00", "pk_count"=>"2", "bit-depth"=>"15/16", "num_samples"=>"233k", "length_s"=>"14.544", "scale_max"=>"1.000000", "window_s"=>"0.050"}
+```
+Options(hash):
+  * input_format (default to "mp3")
+  * gc (no default, set to "true" to auto close! input file)
+
 ###Custom Command
 
 Run any sox command with this method.
 ```ruby
 file = AudioHero::Sox.new(file).command({global: "-V3", input_option: "-t mp3", output_option: "-c 1", effect: "remix 0 1", gc: "true"})
-# Command generated: `sox -V3 -t mp3 input.mp3 -c 1 output.wav remix 0 1`
+# Command generated: sox -V3 -t mp3 input.mp3 -c 1 output.wav remix 0 1
 ```
 Options(hash):
   * global (sox global options, inserted right after `sox`)

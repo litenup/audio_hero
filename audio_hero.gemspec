@@ -7,10 +7,10 @@ Gem::Specification.new do |spec|
   spec.name          = "audio_hero"
   spec.version       = AudioHero::VERSION
   spec.authors       = ["litenup"]
-  spec.email         = ["alanhsu@litenvoice.com"]
+  spec.email         = ["alanhsu@mycallhero.com"]
 
   spec.summary       = %q{Wrapper for sox for audio processing}
-  spec.homepage      = "http://rubygems.org/gems/audio_hero"
+  spec.homepage      = "https://github.com/litenup/audio_hero"
   spec.license       = "MIT"
 
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or

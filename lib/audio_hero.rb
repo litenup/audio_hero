@@ -24,9 +24,9 @@ module AudioHero
       output_options = options[:default] ? "-c 1 -b 16 -r 16k" : options[:output_options]
       case channel
       when "left"
-        channel = "remix 1 0"
+        channel = "remix 1"
       when "right"
-        channel = "remix 0 1"
+        channel = "remix 2"
       else
         channel = nil
       end
@@ -111,6 +111,24 @@ module AudioHero
       Dir["#{dir}/**/*#{format}"]
     end
 
+    def stats(options={})
+      input_format = options[:input_format] ? options[:input_format] : "mp3"
+      src = @file
+      begin
+        parameters = []
+        parameters << "-t #{input_format}"
+        parameters << ":source"
+        parameters << "-n stats"
+        parameters << "2>&1" # redirect stderr to stdout
+        parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
+        success = Cocaine::CommandLine.new("sox", parameters).run(:source => File.expand_path(src.path))
+      rescue => e
+        raise AudioHeroError, "These was an issue getting stats from #{@basename}"
+      end
+      src.close! if options[:gc] == "true"
+      parse_stats(success)
+    end
+
     def command(options={})
       global = options[:global_options]
       input_options = options[:input_options]
@@ -138,6 +156,47 @@ module AudioHero
       end
       src.close! if options[:gc] == "true"
       dst
+    end
+
+    private
+
+    def parse_stats(stats)
+      hash = Hash.new { |h, k| h[k] = {} }
+      if stats.include? "Left"
+        stats.split("\n").drop(1).each do |row|
+          overall = hash[:overall]
+          left = hash[:left]
+          right = hash[:right]
+          array = row.split(" ")
+          if array.count == 4
+            label = array[0].downcase!
+            overall[label] = array[1]
+            left[label] = array[2]
+            right[label] = array[3]
+          elsif array.count > 4
+            label = array.first(array.count - 3).join(" ").gsub!(/( )/, '_').downcase!
+            values = array.last(3)
+            overall[label] = values[0]
+            left[label] = values[1]
+            right[label] = values[2]
+          else
+            label = array.first(array.count - 1).join(" ").gsub!(/( )/, '_').downcase!
+            overall[label] = array.last
+            left[label] = array.last
+            right[label] = array.last
+          end
+        end
+      else
+        stats.split("\n").each do |row|
+          array = row.split(" ")
+          if array.count == 2
+            hash[array.first.downcase!] = array.last
+          elsif array.count > 2
+            hash[array.first(array.count - 1).join(" ").gsub!(/( )/, '_').downcase!] = array.last
+          end
+        end
+      end
+      hash
     end
 
   end
