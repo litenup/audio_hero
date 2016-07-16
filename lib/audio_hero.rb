@@ -1,5 +1,6 @@
 require "audio_hero/version"
 require 'cocaine'
+require 'msgpack'
 require 'tempfile'
 
 # test file: http://s3.amazonaws.com/recordings_2013/5204aebc-a9e9-11e5-baad-842b2b17453e.mp3
