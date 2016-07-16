@@ -80,17 +80,19 @@ module AudioHero
     # Returns an array of the full path of the splitted files, can split two input files at one go using {file2: file} option.
     # Remember its good practice to remove the temp directory after use.
     # FileUtils.remove_entry tempdir
+
     def split_by_silence(options={})
       silence_duration = options[:silence_duration] || "0.5"
       silence_level = options[:silence_level] || "0.03"
       effect = "silence 1 #{silence_duration} #{silence_level}% 1 #{silence_duration} #{silence_level}% : newfile : restart"
       input_format = options[:input_format] ? options[:input_format] : "mp3"
       output_format = options[:output_format]
+      output_filename = options[:output_filename] || "out"
       file2 = options[:file2]
       # Default to wav
       dir = Dir.mktmpdir
       format = output_format ? ".#{output_format}" : ".wav"
-      dst = "#{dir}/out#{format}"
+      dst = "#{dir}/#{output_filename}#{format}"
 
       src = @file
       src2 = file2
@@ -127,6 +129,23 @@ module AudioHero
       end
       src.close! if options[:gc] == "true"
       parse_stats(success)
+    end
+
+    # Requires custom version of yaafe
+    def extract_features(options={})
+      src = @file
+      rate = options[:sample_rate] || "8000"
+      begin
+        parameters = []
+        parameters << "-r #{rate}"
+        parameters << ":source"
+        parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
+        success = Cocaine::CommandLine.new("yaafehero", parameters).run(:source => File.expand_path(src.path))
+      rescue => e
+        raise AudioHeroError, "These was an issue getting stats from #{@basename}"
+      end
+      src.close! if options[:gc] == "true"
+      MessagePack.unpack(success)
     end
 
     def command(options={})

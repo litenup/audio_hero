@@ -72,6 +72,7 @@ Options(hash):
   * silence_level (default to 0.03%)
   * input_format (default to "mp3")
   * output_format (default to "wav")
+  * output_filename (base filename, default to "out". If using custom version of SOX, use "%,1c" for starttime and use "%1,1c-%1,1d" for starttime-endtime as filename)
   * file2 (path to second audio file, I use this to split both channels of an audio file at one go, require a modified sox that will not overwrite file1's output. Eg. my modified sox output [milliseconds].wav instead of 001.wav)
   * gc (no default, set to "true" to auto close! input file)
 
@@ -84,6 +85,17 @@ stats = AudioHero::Sox.new(file).stats({input_format: "wav"})
 ```
 Options(hash):
   * input_format (default to "mp3")
+  * gc (no default, set to "true" to auto close! input file)
+
+###Extract Features
+Extract audio features using custom version of Yaafe script.
+
+```ruby
+features = AudioHero::Sox.new(file).extract_features({sample_rate: "8000"})
+# {"feature1"=>0.34,"feature2"=>2.25}
+```
+Options(hash):
+  * sample_rate (default to "8000")
   * gc (no default, set to "true" to auto close! input file)
 
 ###Custom Command
