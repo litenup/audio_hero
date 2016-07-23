@@ -14,7 +14,7 @@ module AudioHero
 
     def initialize(file, options={})
       @file = file
-      @basename = File.basename(@file.path)
+      @basename = get_basename(file)
     end
 
     # Usage: file = AudioHero::Sox.new(file).convert({output_options: "-c 1 -b 16 -r 16k", output_format: "mp3", channel: "left"}); file.close
@@ -169,6 +169,19 @@ module AudioHero
     end
 
     private
+
+    def get_basename(file)
+      case file
+      when String
+        File.basename(file)
+      when Tempfile
+        File.basename(file.path)
+      when File
+        File.basename(file.path)
+      else
+        raise AudioHeroError, "Unknown input file type #{file.class}"
+      end
+    end
 
     def get_path(file)
       case file
