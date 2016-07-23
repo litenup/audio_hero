@@ -89,14 +89,14 @@ module AudioHero
       input_format = options[:input_format] ? options[:input_format] : "mp3"
       output_format = options[:output_format]
       output_filename = options[:output_filename] || "out"
-      file2 = options[:file2]
+      # file2 = options[:file2]
       # Default to wav
       dir = Dir.mktmpdir
       format = output_format ? ".#{output_format}" : ".wav"
       dst = "#{dir}/#{output_filename}#{format}"
 
       src = @file
-      src2 = file2
+      # src2 = file2 if file2
 
       begin
         parameters = []
@@ -106,11 +106,16 @@ module AudioHero
         parameters << effect
         parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
         success = Cocaine::CommandLine.new("sox", parameters).run(:source => File.expand_path(src.path), :dest => dst)
-        success = Cocaine::CommandLine.new("sox", parameters).run(:source => File.expand_path(src2.path), :dest => dst) if src2
+        # success = Cocaine::CommandLine.new("sox", parameters).run(:source => File.expand_path(src2.path), :dest => dst) if src2
       rescue => e
         raise AudioHeroError, "There was an error splitting #{@basename}"
       end
-      src.close! && src2.close! if options[:gc] == "true"
+      
+      if options[:gc] == "true"
+        src.close! 
+        # src2.close! if src2
+      end 
+
       Dir["#{dir}/**/*#{format}"]
     end
 

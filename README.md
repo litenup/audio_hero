@@ -73,7 +73,6 @@ Options(hash):
   * input_format (default to "mp3")
   * output_format (default to "wav")
   * output_filename (base filename, default to "out". If using custom version of SOX, use "%,1c" for starttime and use "%1,1c-%1,1d" for starttime-endtime as filename)
-  * file2 (path to second audio file, I use this to split both channels of an audio file at one go, require a modified sox that will not overwrite file1's output. Eg. my modified sox output [milliseconds].wav instead of 001.wav)
   * gc (no default, set to "true" to auto close! input file)
 
 ###Stats
