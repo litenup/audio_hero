@@ -31,7 +31,7 @@ module AudioHero
       else
         channel = nil
       end
-      src = @file
+
       # Default conversion to wav
       dst = Tempfile.new(["out", ".#{output_format}"])
       begin
@@ -42,11 +42,11 @@ module AudioHero
         parameters << ":dest"
         parameters << channel if channel
         parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
-        success = Cocaine::CommandLine.new("sox", parameters).run(:source => File.expand_path(src.path), :dest => File.expand_path(dst.path))
+        success = Cocaine::CommandLine.new("sox", parameters).run(:source => get_path(@file), :dest => get_path(dst))
       rescue => e
         raise AudioHeroError, "There was an error converting #{@basename} to #{output_format}"
       end
-      src.close! if options[:gc] == "true"
+      garbage_collect(@file) if options[:gc] == "true"
       dst
     end
 
@@ -56,11 +56,8 @@ module AudioHero
       silence_level = options[:silence_level] || "0.03"
       effect = "silence 1 #{silence_duration} #{silence_level}% -1 #{silence_duration} #{silence_level}%"
       input_format = options[:input_format] ? options[:input_format] : "mp3"
-      output_format = options[:output_format] ? options[:output_format] : "wav"
+      output_format = options[:output_format] ? options[:output_format] : "wav" # Default to wav
 
-      # Default to wav
-      src = @file
-      # Default conversion to wav
       dst = Tempfile.new(["out", ".#{output_format}"])
       begin
         parameters = []
@@ -69,11 +66,11 @@ module AudioHero
         parameters << ":dest"
         parameters << effect
         parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
-        success = Cocaine::CommandLine.new("sox", parameters).run(:source => File.expand_path(src.path), :dest => File.expand_path(dst.path))
+        success = Cocaine::CommandLine.new("sox", parameters).run(:source => get_path(@file), :dest => get_path(dst))
       rescue => e
         raise AudioHeroError, "There was an error converting #{@basename} to #{output_format}"
       end
-      src.close! if options[:gc] == "true"
+      garbage_collect(@file) if options[:gc] == "true"
       dst
     end
 
@@ -89,14 +86,10 @@ module AudioHero
       input_format = options[:input_format] ? options[:input_format] : "mp3"
       output_format = options[:output_format]
       output_filename = options[:output_filename] || "out"
-      # file2 = options[:file2]
       # Default to wav
       dir = Dir.mktmpdir
       format = output_format ? ".#{output_format}" : ".wav"
       dst = "#{dir}/#{output_filename}#{format}"
-
-      src = @file
-      # src2 = file2 if file2
 
       begin
         parameters = []
@@ -105,23 +98,17 @@ module AudioHero
         parameters << ":dest"
         parameters << effect
         parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
-        success = Cocaine::CommandLine.new("sox", parameters).run(:source => File.expand_path(src.path), :dest => dst)
-        # success = Cocaine::CommandLine.new("sox", parameters).run(:source => File.expand_path(src2.path), :dest => dst) if src2
+        success = Cocaine::CommandLine.new("sox", parameters).run(:source => get_path(@file), :dest => dst)
       rescue => e
         raise AudioHeroError, "There was an error splitting #{@basename}"
       end
-      
-      if options[:gc] == "true"
-        src.close! 
-        # src2.close! if src2
-      end 
+      garbage_collect(@file) if options[:gc] == "true"
 
       Dir["#{dir}/**/*#{format}"]
     end
 
     def stats(options={})
       input_format = options[:input_format] ? options[:input_format] : "mp3"
-      src = @file
       begin
         parameters = []
         parameters << "-t #{input_format}"
@@ -129,28 +116,27 @@ module AudioHero
         parameters << "-n stats"
         parameters << "2>&1" # redirect stderr to stdout
         parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
-        success = Cocaine::CommandLine.new("sox", parameters).run(:source => File.expand_path(src.path))
+        success = Cocaine::CommandLine.new("sox", parameters).run(:source => get_path(@file))
       rescue => e
         raise AudioHeroError, "These was an issue getting stats from #{@basename}"
       end
-      src.close! if options[:gc] == "true"
+      garbage_collect(@file) if options[:gc] == "true"
       parse_stats(success)
     end
 
     # Requires custom version of yaafe
     def extract_features(options={})
-      src = @file
       rate = options[:sample_rate] || "8000"
       begin
         parameters = []
         parameters << "-r #{rate}"
         parameters << ":source"
         parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
-        success = Cocaine::CommandLine.new("yaafehero", parameters).run(:source => File.expand_path(src.path))
+        success = Cocaine::CommandLine.new("yaafehero", parameters).run(:source => get_path(@file))
       rescue => e
         raise AudioHeroError, "These was an issue getting stats from #{@basename}"
       end
-      src.close! if options[:gc] == "true"
+      garbage_collect(@file) if options[:gc] == "true"
       MessagePack.unpack(success)
     end
 
@@ -160,7 +146,6 @@ module AudioHero
       output_options = options[:output_options]
       effect = options[:effect]
       output_format = options[:output_format] ? options[:output_format] : "wav"
-      src = @file
 
       # Default to wav
       dst = Tempfile.new(["out", ".#{output_format}"])
@@ -174,16 +159,42 @@ module AudioHero
         parameters << effect if effect
         parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
         sox = Cocaine::CommandLine.new("sox", parameters)
-        command = sox.command(source: File.expand_path(src.path), dest: File.expand_path(dst.path))
-        success = sox.run(source: File.expand_path(src.path), dest: File.expand_path(dst.path))
+        command = sox.command(:source => get_path(@file), :dest => get_path(dst))
+        success = sox.run(:source => get_path(@file), :dest => get_path(dst))
       rescue => e
         raise AudioHeroError, "There was an error excuting command: #{command}"
       end
-      src.close! if options[:gc] == "true"
+      garbage_collect(@file) if options[:gc] == "true"
       dst
     end
 
     private
+
+    def get_path(file)
+      case file
+      when String
+        File.expand_path(file)
+      when Tempfile
+        File.expand_path(file.path)
+      when File
+        File.expand_path(file.path)
+      else
+        raise AudioHeroError, "Unknown input file type #{file.class}"
+      end
+    end
+
+    def garbage_collect(file)
+      case file
+      when String
+        File.delete(file)
+      when Tempfile
+        file.close!
+      when File
+        File.delete(file.path)
+      else
+        raise AudioHeroError, "Unknown input file type #{file.class}"
+      end
+    end
 
     def parse_stats(stats)
       hash = Hash.new { |h, k| h[k] = {} }

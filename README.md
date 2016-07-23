@@ -39,6 +39,11 @@ new_file = AudioHero::Sox.new(file).convert({output_options: "-c 1", output_form
 # Optional: Close the file after you are done for garbage collection.
 new_file.close!
 
+# AudioHero can also take a direct filepath string as input
+
+file_path = open("url/or/path/to/audio/file").path # "/path/to/tempfile"
+new_file = AudioHero::Sox.new(file_path).convert({output_options: "-c 1", output_format: "mp3", channel: "left"})
+
 # With no options hash it will runs this command by default: `sox -t input.mp3 -c 1 -b 16 -r 16k out.wav`
 AudioHero::Sox.new(file).convert
 ```
