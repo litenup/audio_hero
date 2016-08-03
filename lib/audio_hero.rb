@@ -107,6 +107,23 @@ module AudioHero
       Dir["#{dir}/**/*#{format}"]
     end
 
+    # Concat takes in an array of audio files (same format) and concatenate them.
+    def concat(options={})
+      output_format = options[:output_format] ? options[:output_format] : "wav"
+      dst = Tempfile.new(["out", ".#{output_format}"])
+      file_array = get_array(@file)
+      begin
+        parameters = file_array
+        parameters << ":dest"
+        parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
+        success = Cocaine::CommandLine.new("sox", parameters).run(:dest => get_path(dst))
+      rescue => e
+        raise AudioHeroError, "There was an error joining #{@file}"
+      end
+      # no garbage collect option for join
+      dst
+    end
+
     def stats(options={})
       input_format = options[:input_format] ? options[:input_format] : "mp3"
       begin
@@ -191,6 +208,15 @@ module AudioHero
         File.expand_path(file.path)
       when File
         File.expand_path(file.path)
+      else
+        raise AudioHeroError, "Unknown input file type #{file.class}"
+      end
+    end
+
+    def get_array(file)
+      case file
+      when Array
+        file
       else
         raise AudioHeroError, "Unknown input file type #{file.class}"
       end

@@ -80,6 +80,16 @@ Options(hash):
   * output_filename (base filename, default to "out". If using custom version of SOX, use "%,1c" for starttime and use "%1,1c-%1,1d" for starttime-endtime as filename)
   * gc (no default, set to "true" to auto close! input file)
 
+###Concatenate multiple audio files into one
+
+```ruby
+file_array = ["file/location/1.mp3","file/location/2.mp3","file/location/3.mp3"]
+file = AudioHero::Sox.new(file_array).concat({output_format: "mp3")
+```
+Options(hash):
+  * output_format (default to "wav")
+
+
 ###Stats
 Get statistics report on audio file (support up to 2 channels).
 
