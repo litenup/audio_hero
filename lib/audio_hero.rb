@@ -111,9 +111,9 @@ module AudioHero
     def concat(options={})
       output_format = options[:output_format] ? options[:output_format] : "wav"
       dst = Tempfile.new(["out", ".#{output_format}"])
-      file_array = get_array(@file)
+      _file_array = get_array(@file)
       begin
-        parameters = file_array
+        parameters = _file_array
         parameters << ":dest"
         parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
         success = Cocaine::CommandLine.new("sox", parameters).run(:dest => get_path(dst))
@@ -195,6 +195,8 @@ module AudioHero
         File.basename(file.path)
       when File
         File.basename(file.path)
+      when Array
+        nil
       else
         raise AudioHeroError, "Unknown input file type #{file.class}"
       end
