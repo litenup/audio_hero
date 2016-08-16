@@ -60,8 +60,10 @@ Options(hash):
 file = AudioHero::Sox.new(file).remove_silence({input_format: "wav", gc: "true"})
 ```
 Options(hash):
-  * silence_duration (default to 0.1 seconds)
-  * silence_level (default to 0.03%)
+  * above_period_duration (default to 0.1 seconds)
+  * above_period_threshold silence_level (default to 0.03%)
+  * below_period_duration (default to 0.1 seconds)
+  * below_period_threshold silence_level (default to 0.03%)
   * input_format (default to "mp3")
   * output_format (default to "wav")
   * gc (no default, set to "true" to auto close! input file)
@@ -73,8 +75,10 @@ file_array = AudioHero::Sox.new(file).split_by_silence({input_format: "wav", gc:
 # file_array == ["path/to/out001.wav", "path/to/out002.wav"]
 ```
 Options(hash):
-  * silence_duration (default to 0.1 seconds)
-  * silence_level (default to 0.03%)
+  * above_period_duration (default to 0.5 seconds)
+  * above_period_threshold silence_level (default to 0.05%)
+  * below_period_duration (default to 1.0 seconds)
+  * below_period_threshold silence_level (default to 0.02%)
   * input_format (default to "mp3")
   * output_format (default to "wav")
   * output_filename (base filename, default to "out". If using custom version of SOX, use "%,1c" for starttime and use "%1,1c-%1,1d" for starttime-endtime as filename)

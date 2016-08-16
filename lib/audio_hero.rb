@@ -52,9 +52,11 @@ module AudioHero
 
     # Usage: file = AudioHero::Sox.new(file).remove_silence
     def remove_silence(options={})
-      silence_duration = options[:silence_duration] || "0.1"
-      silence_level = options[:silence_level] || "0.03"
-      effect = "silence 1 #{silence_duration} #{silence_level}% -1 #{silence_duration} #{silence_level}%"
+      above_period_duration = options[:above_period_duration] || "0.1"
+      above_period_threshold = options[:above_period_threshold] || "0.03"
+      below_period_duration = options[:below_period_duration] || "0.1"
+      below_period_threshold = options[:below_period_threshold] || "0.03"
+      effect = "silence 1 #{above_period_duration} #{above_period_threshold}% -1 #{below_period_threshold} #{below_period_threshold}%"
       input_format = options[:input_format] ? options[:input_format] : "mp3"
       output_format = options[:output_format] ? options[:output_format] : "wav" # Default to wav
 
@@ -80,9 +82,12 @@ module AudioHero
     # FileUtils.remove_entry tempdir
 
     def split_by_silence(options={})
-      silence_duration = options[:silence_duration] || "0.5"
-      silence_level = options[:silence_level] || "0.03"
-      effect = "silence 1 #{silence_duration} #{silence_level}% 1 #{silence_duration} #{silence_level}% : newfile : restart"
+      above_period_duration = options[:above_period_duration] || "0.5"
+      above_period_threshold = options[:above_period_threshold] || "0.05"
+      below_period_duration = options[:below_period_duration] || "1.0"
+      below_period_threshold = options[:below_period_threshold] || "0.02"
+
+      effect = "silence 1 #{above_period_duration} #{above_period_threshold}% 1 #{below_period_duration} #{below_period_threshold}% : newfile : restart"
       input_format = options[:input_format] ? options[:input_format] : "mp3"
       output_format = options[:output_format]
       output_filename = options[:output_filename] || "out"
@@ -111,9 +116,9 @@ module AudioHero
     def concat(options={})
       output_format = options[:output_format] ? options[:output_format] : "wav"
       dst = Tempfile.new(["out", ".#{output_format}"])
-      _file_array = get_array(@file)
+      files = get_array(@file)
       begin
-        parameters = _file_array
+        parameters = files.dup
         parameters << ":dest"
         parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
         success = Cocaine::CommandLine.new("sox", parameters).run(:dest => get_path(dst))
