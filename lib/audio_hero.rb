@@ -22,7 +22,7 @@ module AudioHero
       channel = options[:channel]
       input_format = options[:input_format] ? options[:input_format] : "mp3"
       output_format = options[:output_format] ? options[:output_format] : "wav"
-      output_options = options[:default] ? "-c 1 -b 16 -r 16k" : options[:output_options]
+      output_options = options[:output_options] ? options[:output_options] : "-c 1 -b 16 -r 16k"
       case channel
       when "left"
         channel = "remix 1"
@@ -80,7 +80,6 @@ module AudioHero
     # Returns an array of the full path of the splitted files, can split two input files at one go using {file2: file} option.
     # Remember its good practice to remove the temp directory after use.
     # FileUtils.remove_entry tempdir
-
     def split_by_silence(options={})
       above_period_duration = options[:above_period_duration] || "0.5"
       above_period_threshold = options[:above_period_threshold] || "0.05"
@@ -126,6 +125,35 @@ module AudioHero
         raise AudioHeroError, "There was an error joining #{@file}"
       end
       # no garbage collect option for join
+      dst
+    end
+
+    # Cuts portions out of the audio. Any number of positions may be given
+    # Usage: file = AudioHero::Sox.new(file).trim({trim_positions: "=10 =20 =30 =40"})
+    # trim_positions "=10 =20 =30 =40" means retrieving audio from 10s-20s and from 30s-40s, and joining them into one file.
+    # See sox trim effect for more examples
+    # Default output to 16bit 16 sample rate Wave audio
+    def trim(options={})
+      raise AudioHeroError, "Trim parameters not given" unless options[:trim_positions]
+      input_format = options[:input_format] ? options[:input_format] : "mp3"
+      output_format = options[:output_format] ? options[:output_format] : "wav" # Default to wav
+      output_options = options[:output_options] ? options[:output_options] : "-c 1 -b 16 -r 16k"
+      trim_positions = options[:trim_positions]
+      effect = "trim #{trim_positions}"
+      dst = Tempfile.new(["out", ".#{output_format}"])
+      begin
+        parameters = []
+        parameters << "-t #{input_format}"
+        parameters << ":source"
+        parameters << output_options if output_options
+        parameters << ":dest"
+        parameters << effect
+        parameters = parameters.flatten.compact.join(" ").strip.squeeze(" ")
+        success = Cocaine::CommandLine.new("sox", parameters).run(:source => get_path(@file), :dest => get_path(dst))
+      rescue => e
+        raise AudioHeroError, "There was an error trimming #{@basename} using positions #{trim_positions}"
+      end
+      garbage_collect(@file) if options[:gc] == "true"
       dst
     end
 

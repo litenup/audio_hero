@@ -93,6 +93,21 @@ file = AudioHero::Sox.new(file_array).concat({output_format: "mp3")
 Options(hash):
   * output_format (default to "wav")
 
+###Trim
+Cuts portions out of the audio. Any number of positions may be given.
+Usage: file = AudioHero::Sox.new(file).trim({trim_positions: "=10 =20 =30 =40"})
+See sox trim effect for more examples
+Default output to 16bit 16 sample rate Wave audio
+
+```ruby
+file = AudioHero::Sox.new(file).trim({trim_positions: "=10 =20 =30 =40", gc: "true"})
+```
+Options(hash):
+  * trim_positions ("=10 =20 =30 =40" means retrieving audio from 10s-20s and from 30s-40s)
+  * input_format (default to "mp3")
+  * output_format (default to "wav")
+  * output_options (default to "-c 1 -b 16 -r 16k", single channel, 16hz, 16bits)
+  * gc (no default, set to "true" to auto close! input file)
 
 ###Stats
 Get statistics report on audio file (support up to 2 channels).
